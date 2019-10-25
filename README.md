@@ -1,6 +1,6 @@
 # Fluid_simulation
 
-Project proposal 10.25.2019:
+##### Project proposal 10.25.2019:
 
 This is a WebGL project initially started as a course project for ECSE4750 Computer Graphics.
 
