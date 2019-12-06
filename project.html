@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css">
+      body{
+        background-color: black;
+      }
+      .slidemsg {
+              clear: left;
+              width: 512px;
+              margin: 20px 0 0 0;
+              padding: 0;
+              font-size: 1.2em;
+              color: #5D8CAE;
+              font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif
+            }
+      .slider {
+        -webkit-appearance: none;
+        width: 512px;
+        height: 15px;
+        border-radius: 5px;  
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
+      }
+      
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%; 
+        background: #5D8CAE;
+        cursor: pointer;
+      }
+      
+      .slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #5D8CAE;
+        cursor: pointer;
+      }
+
+      button{
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        background: #5D8CAE;
+        color:#ffffff;
+        border: none;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 1.2em;
+      }
+
+      button:active {
+         background-color: #47718e;
+      }
+
+      p{
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        color:#5D8CAE;
+        font-size: 1.2em;
+      }
+      </style>  
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+varying float vZ;
+varying vec4 pos;
+uniform vec3 theta;
+varying vec3 v_Texture_coordinate;
+uniform sampler2D u_Sampler;
+
+void main()
+{
+  vec3 c = cos( theta );
+  vec3 s = sin( theta );
+
+  pos = vPosition;
+  v_Texture_coordinate.x = vPosition.x;
+  v_Texture_coordinate.y = vPosition.y; 
+  v_Texture_coordinate.z = vPosition.z;
+
+  v_Texture_coordinate.x = vPosition.x + 0.8;
+  v_Texture_coordinate.x = v_Texture_coordinate.x * 5.0 / 3.0;
+  //v_Texture_coordinate.x = (v_Texture_coordinate.x + 4.0) / 5.0;
+
+  v_Texture_coordinate.y = (vPosition.y + 0.6) / 1.2;
+  //v_Texture_coordinate.y = vPosition.y * 5.0 / 3.0;
+  //v_Texture_coordinate.y = (v_Texture_coordinate.y + 1.0) / 2.0;
+
+  //pos.z = texture2D(u_Sampler, v_Texture_coordinate).x;
+  pos.w = 1.0;
+
+  pos.x = (pos.x + 0.5) * 2.0;
+  
+  // Remeber: thse matrices are column-major
+  mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
+      0.0,  c.x,  s.x, 0.0,
+      0.0, -s.x,  c.x, 0.0,
+      0.0,  0.0,  0.0, 1.0 );
+  
+  mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
+      0.0, 1.0,  0.0, 0.0,
+      s.y, 0.0,  c.y, 0.0,
+      0.0, 0.0,  0.0, 1.0 );
+  
+  
+  mat4 rz = mat4( c.z, s.z, 0.0, 0.0,
+      -s.z,  c.z, 0.0, 0.0,
+      0.0,  0.0, 1.0, 0.0,
+      0.0,  0.0, 0.0, 1.0 );
+        
+  pos = rz * ry * rx * pos;
+  pos.x = pos.x / 2.0 - 0.5;
+  if(pos.z > 0.5) pos.z = 0.5;
+  if(pos.z < -0.5) pos.z = -0.5;
+  gl_Position = pos;
+  vZ = 1.0 - (gl_Position.z + 1.0) / 2.0;
+  
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+varying float vZ;
+varying vec3 v_Texture_coordinate;
+uniform sampler2D u_Sampler;
+
+void main()
+{
+  gl_FragColor = vec4( 0.36, 0.46- v_Texture_coordinate.z*2.0 , 0.68 - v_Texture_coordinate.z*2.0, 1 ) ;
+}
+</script>
+
+<script id="pad_vertex-shader" type="x-shader/x-vertex">
+  attribute vec4 vPosition_pad;
+  varying float vZ;
+  varying vec2 v_Texture_coordinate;
+
+  void main()
+  {
+    v_Texture_coordinate = vPosition_pad.xy;
+    v_Texture_coordinate.y = (v_Texture_coordinate.y + 1.0) / 2.0;
+    gl_Position = vPosition_pad;
+  }
+  </script>
+
+  <script id="pad_fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+    varying float vZ;
+    uniform sampler2D u_Sampler;
+    // Data coming from the vertex shader
+    varying vec2 v_Texture_coordinate;
+
+    void main()
+    {
+      gl_FragColor = texture2D(u_Sampler, v_Texture_coordinate);
+      //gl_FragColor = gl_FragCoord;
+    }
+    </script>
+
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="project.js"></script>
+</head>
+
+<body>
+
+<div style="display: inline;"><canvas id="gl-canvas" width="1024" height="512">
+    Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+      </div>
+
+
+<img id = "texImage" src = "tex.png" hidden>
+<div style="display: flex;">
+  <span>
+    <div class="slidecontainer">
+      <p class="slidemsg">Rotate around X Axis:<span id="displayX" style="width:512px;"></span></p>
+      <input type="range" min="-180" max="180" value="0" class="slider" id="xRange">
+    </div>
+
+    <div class="slidecontainer">
+      <p class="slidemsg">Rotate around Y Axis:<span id="displayY"></span></p>
+      <input type="range" min="-85" max="85" value="0" class="slider" id="yRange">
+    </div>
+
+    <div class="slidecontainer">
+      <p class="slidemsg">Rotate around Z Axis:<span id="displayZ"></span></p>
+      <input type="range" min="-180" max="180" value="0" class="slider" id="zRange">
+    </div>
+  </span>
+  <div>
+  <span style="padding-left:10px; padding-top:10px; padding-right:10px; display: inline;">
+    <button id = "moreDamping"> Increase damping </button>
+    <button id = "lessDamping"> Decrease damping </button>
+  </span>
+  <p style="padding-left:10px;margin-top:10px;">Current Damping: <span id = "visValue"></span></p>
+  <span style="padding-left:10px; padding-top:10px; padding-right:10px; display: inline;">
+    <button id = "moreIntensity"> Increase Intensity </button>
+    <button id = "lessIntensity"> Decrease Intensity </button>
+  </span>
+  <p style="padding-left:10px;margin-top:10px;">Current Input Intensity: <span id = "inpuptIns"></span></p>
+  </div>
+</div>
+</body>
+</html>
